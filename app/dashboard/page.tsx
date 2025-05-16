@@ -22,7 +22,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-green-800">Dashboard</h2>
-          <p className="text-gray-500">Welcome back, Admin</p>
+          <p className="text-gray-500">Welcomm, Admin</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
@@ -88,7 +88,7 @@ export default function DashboardPage() {
             <Warehouse className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs. 4.2M</div>
+            <div className="text-2xl font-bold">Rs. 4M</div>
             <p className="text-xs text-gray-500">
               <span className="text-amber-500 inline-flex items-center">
                 -2% <TrendingUp className="ml-1 h-3 w-3 rotate-180" />
