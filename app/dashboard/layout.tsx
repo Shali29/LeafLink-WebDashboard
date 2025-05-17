@@ -71,7 +71,6 @@ export default function DashboardLayout({
     { href: "/dashboard/suppliers", icon: Users, title: "Suppliers" },
     { href: "/dashboard/drivers", icon: Truck, title: "Drivers" },
     { href: "/dashboard/inventory", icon: Warehouse, title: "Inventory" },
-    { href: "/dashboard/distribution", icon: Package, title: "Distribution" },
     { href: "/dashboard/finances", icon: CreditCard, title: "Finances" },
     { href: "/dashboard/calculations", icon: Calculator, title: "Calculations" },
     { href: "/dashboard/tracking", icon: MapPin, title: "Tracking" },
