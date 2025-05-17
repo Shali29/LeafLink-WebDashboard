@@ -4,9 +4,8 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Falcon Tea Factory - Admin Dashboard",
+  title: "LeafLink- Admin Dashboard",
   description: "Smart customer information management system for Falcon Tea Factory",
-  generator: 'v0.dev'
 };
 
 export default function RootLayout({

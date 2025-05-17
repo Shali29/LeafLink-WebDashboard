@@ -183,6 +183,34 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                <Users className="h-5 w-5 mb-1" />
+                <span className="text-xs">Add Supplier</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                <Truck className="h-5 w-5 mb-1" />
+                <span className="text-xs">Add Driver</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                <Package className="h-5 w-5 mb-1" />
+                <span className="text-xs">Update Inventory</span>
+              </Button>
+              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                <ArrowUpRight className="h-5 w-5 mb-1" />
+                <span className="text-xs">Generate Report</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
