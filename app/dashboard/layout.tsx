@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from 'next/image';
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
@@ -81,10 +82,10 @@ export default function DashboardLayout({
     <div className="flex h-full flex-col gap-2">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-green-800">
-          <Leaf className="h-4 w-6 text-green-600" />
+         <Image src="/logo.png" alt="LeafLink Logo" width={24} height={24} />
           <span>LeafLink</span>
-          <Leaf className="h-6 w-6 text-green-600" />
-          <span>Falcon Tea Factory</span>
+          <br>
+          <span>Falcon Tea Factory</span> </br>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-2">
