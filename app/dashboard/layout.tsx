@@ -81,11 +81,12 @@ export default function DashboardLayout({
   const sidebar = (
     <div className="flex h-full flex-col gap-2">
       <div className="flex h-14 items-center border-b px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-green-800">
-         <Image src="/logo.png" alt="LeafLink Logo" width={24} height={24} />
-          <span>LeafLink</span>
-          <br>
-          <span>Falcon Tea Factory</span> </br>
+        <Link href="/dashboard" className="flex flex-col items-start gap-1 font-semibold text-green-800">
+          <div className="flex items-center gap-2">
+            <Image src="/Tea Logo.jpg" alt="LeafLink Logo" width={24} height={24} />
+            <span>LeafLink</span>
+          </div>
+          <span>Falcon Tea Factory</span>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-2">

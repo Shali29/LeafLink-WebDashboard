@@ -1,3 +1,6 @@
+"use client"
+
+import React, { useEffect, useState } from "react"
 import {
   ArrowUpRight,
   Leaf,
@@ -5,27 +8,119 @@ import {
   Truck,
   Users,
   Warehouse,
-  TrendingUp,
   AlertTriangle,
   Calendar,
-  MapPin,
 } from "lucide-react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+interface TeaCollectionStat {
+  date: string // e.g. "2025-05-10T00:00:00.000Z"
+  totalWeight: number
+}
 
 export default function DashboardPage() {
+  const [suppliers, setSuppliers] = useState<any[]>([])
+  const [drivers, setDrivers] = useState<any[]>([])
+  const [collections, setCollections] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [teaStats, setTeaStats] = useState<TeaCollectionStat[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchAllData() {
+      setLoading(true)
+      try {
+        const [
+          supRes,
+          driverRes,
+          collRes,
+          prodRes,
+          teaStatRes,
+        ] = await Promise.all([
+          fetch("https://backend-production-f1ac.up.railway.app/api/supplier/all"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/driver/AllDrivers"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/supplierCollection/all"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/product/all"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/supplierCollection/statistics"),
+        ])
+
+        if (
+          !supRes.ok ||
+          !driverRes.ok ||
+          !collRes.ok ||
+          !prodRes.ok ||
+          !teaStatRes.ok
+        ) {
+          throw new Error("Failed to fetch some data")
+        }
+
+        setSuppliers(await supRes.json())
+        setDrivers(await driverRes.json())
+        setCollections(await collRes.json())
+        setProducts(await prodRes.json())
+
+        // Extract dailyCollections array from response object
+        const teaStatsData = await teaStatRes.json()
+        setTeaStats(teaStatsData.dailyCollections || [])
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllData()
+  }, [])
+
+  // Calculate total tea collection kg (from collections)
+  const totalTeaCollectionKg = collections.reduce(
+    (sum, item) => sum + (item.BalanceWeight_kg || 0),
+    0
+  )
+
+  // Calculate fertilizer collection value from products excluding tea packets
+  const fertilizerProducts = products.filter((p: any) => !p.ProductID.startsWith("T"))
+  const fertilizerCollectionValue = fertilizerProducts.reduce(
+    (sum, p) => sum + (p.Rate_per_Bag || 0) * (p.Stock_bag || 0),
+    0
+  )
+
+  // Suppliers count
+  const totalSuppliers = suppliers.length
+  // Drivers count (assuming all active)
+  const activeDriversCount = drivers.length
+
+  // Prepare Tea Collection Overview chart data
+  const sortedTeaStats = teaStats
+    .slice()
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-7) // last 7 days
+
+  const dayLabels = sortedTeaStats.map((stat) =>
+    new Date(stat.date).toLocaleDateString("en-US", { weekday: "short" })
+  )
+  const values = sortedTeaStats.map((stat) => stat.totalWeight)
+  const maxVal = Math.max(...values, 1)
+
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-green-800">Dashboard</h2>
           <p className="text-gray-500">Welcome, Admin</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" disabled>
             <Calendar className="mr-2 h-4 w-4" />
             {new Date().toLocaleDateString("en-US", {
               month: "long",
@@ -36,6 +131,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-l-4 border-l-green-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -43,38 +139,46 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">128</div>
+            <div className="text-2xl font-bold">{loading ? "..." : totalSuppliers}</div>
           </CardContent>
         </Card>
+
         <Card className="border-l-4 border-l-blue-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Active Drivers</CardTitle>
             <Truck className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{loading ? "..." : activeDriversCount}</div>
           </CardContent>
         </Card>
+
         <Card className="border-l-4 border-l-amber-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Tea Collection</CardTitle>
             <Leaf className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,284 kg</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : totalTeaCollectionKg.toLocaleString()} kg
+            </div>
           </CardContent>
         </Card>
+
         <Card className="border-l-4 border-l-purple-600">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Fertilizer Collection</CardTitle>
             <Warehouse className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs. 4M</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : `Rs. ${fertilizerCollectionValue.toLocaleString()}`}
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tea Collection Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
@@ -83,16 +187,28 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px] flex items-end justify-between gap-2">
-              {[65, 72, 84, 78, 90, 86, 95].map((value, i) => (
-                <div key={i} className="relative flex flex-col items-center">
-                  <div className="w-12 bg-green-600 rounded-t-md" style={{ height: `${value * 2}px` }}></div>
-                  <span className="text-xs mt-2">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}</span>
-                  <span className="text-xs text-gray-500">{value}kg</span>
-                </div>
-              ))}
+              {loading || sortedTeaStats.length === 0 ? (
+                <p className="text-center w-full">Loading chart...</p>
+              ) : (
+                values.map((value, i) => {
+                  const barHeight = (value / maxVal) * 190 // max bar height px
+                  return (
+                    <div key={i} className="relative flex flex-col items-center">
+                      <div
+                        className="w-12 bg-green-600 rounded-t-md"
+                        style={{ height: `${barHeight}px` }}
+                      ></div>
+                      <span className="text-xs mt-2">{dayLabels[i]}</span>
+                      <span className="text-xs text-gray-500">{value.toLocaleString()} kg</span>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Alerts & Notifications */}
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Alerts & Notifications</CardTitle>
@@ -104,7 +220,9 @@ export default function DashboardPage() {
                 <AlertTriangle className="mt-1 h-5 w-5 text-amber-500" />
                 <div>
                   <p className="text-sm font-medium">Low Fertilizer Stock</p>
-                  <p className="text-xs text-gray-500">NPK Fertilizer is running low (15 units left)</p>
+                  <p className="text-xs text-gray-500">
+                    NPK Fertilizer is running low (15 units left)
+                  </p>
                   <div className="mt-2">
                     <Button variant="outline" size="sm">
                       Order More
@@ -116,7 +234,9 @@ export default function DashboardPage() {
                 <AlertTriangle className="mt-1 h-5 w-5 text-red-500" />
                 <div>
                   <p className="text-sm font-medium">Loan Payment Due</p>
-                  <p className="text-xs text-gray-500">5 suppliers have loan payments due this week</p>
+                  <p className="text-xs text-gray-500">
+                    5 suppliers have loan payments due this week
+                  </p>
                   <div className="mt-2">
                     <Button variant="outline" size="sm">
                       View Details
@@ -128,7 +248,9 @@ export default function DashboardPage() {
                 <AlertTriangle className="mt-1 h-5 w-5 text-green-500" />
                 <div>
                   <p className="text-sm font-medium">Advance Payment Reminder</p>
-                  <p className="text-xs text-gray-500">Supplier advances due on 25th (3 days remaining)</p>
+                  <p className="text-xs text-gray-500">
+                    Supplier advances due on 25th (3 days remaining)
+                  </p>
                   <div className="mt-2">
                     <Button variant="outline" size="sm">
                       Prepare Advances
@@ -141,8 +263,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Monthly Targets and Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Monthly Targets</CardTitle>
@@ -185,60 +307,44 @@ export default function DashboardPage() {
         </Card>
 
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Users className="h-5 w-5 mb-1" />
-                <span className="text-xs">Add Supplier</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Truck className="h-5 w-5 mb-1" />
-                <span className="text-xs">Add Driver</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Package className="h-5 w-5 mb-1" />
-                <span className="text-xs">Update Inventory</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <ArrowUpRight className="h-5 w-5 mb-1" />
-                <span className="text-xs">Generate Report</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Users className="h-5 w-5 mb-1" />
-                <span className="text-xs">Add Supplier</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Truck className="h-5 w-5 mb-1" />
-                <span className="text-xs">Add Driver</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <Package className="h-5 w-5 mb-1" />
-                <span className="text-xs">Update Inventory</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
-                <ArrowUpRight className="h-5 w-5 mb-1" />
-                <span className="text-xs">Generate Report</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                >
+                  <Users className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Add Supplier</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                >
+                  <Truck className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Add Driver</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                >
+                  <Package className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Update Inventory</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center"
+                >
+                  <ArrowUpRight className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Generate Report</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

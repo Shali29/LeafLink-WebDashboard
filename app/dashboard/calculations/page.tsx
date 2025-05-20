@@ -1,108 +1,160 @@
+"use client"
+
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import { Calculator, Download, FileText, Filter, Printer, Search, SlidersHorizontal } from "lucide-react"
+import {
+  Calculator,
+  Download,
+  FileText,
+  Filter,
+  Printer,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 
+// Type for each collection record from API
+interface Collection {
+  S_RegisterID: string
+  S_FullName: string
+  Current_Rate: number
+  TotalWeight: number
+  DateTime: string // ISO date string
+}
+
+interface SupplierSalary {
+  supplierId: string
+  supplierName: string
+  totalWeight: number
+  averageRate: number
+  grossAmount: number
+  month: string // e.g. "April 2023"
+}
+
 export default function CalculationsPage() {
-  // Mock data for salary calculations
-  const salaryCalculations = [
-    {
-      id: "SC001",
-      supplier: "Kamal Perera",
-      supplierId: "SUP001",
-      totalWeight: 450,
-      pricePerKg: 100,
-      grossAmount: 45000,
-      transportFee: 2000,
-      advance: 10000,
-      loanDeduction: 5000,
-      teaPackets: 1400,
-      fertilizer: 2500,
-      otherDeductions: 0,
-      netAmount: 24100,
-      status: "Paid",
-      month: "April 2023",
-    },
-    {
-      id: "SC002",
-      supplier: "Nimal Silva",
-      supplierId: "SUP002",
-      totalWeight: 520,
-      pricePerKg: 100,
-      grossAmount: 52000,
-      transportFee: 2500,
-      advance: 15000,
-      loanDeduction: 7500,
-      teaPackets: 700,
-      fertilizer: 4500,
-      otherDeductions: 1000,
-      netAmount: 20800,
-      status: "Paid",
-      month: "April 2023",
-    },
-    {
-      id: "SC003",
-      supplier: "Sunil Fernando",
-      supplierId: "SUP003",
-      totalWeight: 380,
-      pricePerKg: 100,
-      grossAmount: 38000,
-      transportFee: 1800,
-      advance: 8000,
-      loanDeduction: 3000,
-      teaPackets: 1400,
-      fertilizer: 0,
-      otherDeductions: 500,
-      netAmount: 23300,
-      status: "Pending",
-      month: "April 2023",
-    },
-    {
-      id: "SC004",
-      supplier: "Amal Jayawardena",
-      supplierId: "SUP004",
-      totalWeight: 480,
-      pricePerKg: 100,
-      grossAmount: 48000,
-      transportFee: 2200,
-      advance: 12000,
-      loanDeduction: 10000,
-      teaPackets: 700,
-      fertilizer: 2800,
-      otherDeductions: 0,
-      netAmount: 20300,
-      status: "Pending",
-      month: "April 2023",
-    },
-    {
-      id: "SC005",
-      supplier: "Saman Kumara",
-      supplierId: "SUP005",
-      totalWeight: 410,
-      pricePerKg: 100,
-      grossAmount: 41000,
-      transportFee: 2000,
-      advance: 7500,
-      loanDeduction: 2500,
-      teaPackets: 1400,
-      fertilizer: 1800,
-      otherDeductions: 0,
-      netAmount: 25800,
-      status: "Paid",
-      month: "April 2023",
-    },
-  ]
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [groupedSalaries, setGroupedSalaries] = useState<SupplierSalary[]>([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState("")
+  const [filterMonth, setFilterMonth] = useState<string>("")
+
+  // Fetch all collections
+  useEffect(() => {
+    const fetchCollections = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(
+          "https://backend-production-f1ac.up.railway.app/api/supplierCollection/all"
+        )
+        if (!res.ok) throw new Error("Failed to fetch collections")
+        const data: Collection[] = await res.json()
+        setCollections(data)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCollections()
+  }, [])
+
+  // Group collections by supplier and by month
+  useEffect(() => {
+    if (collections.length === 0) {
+      setGroupedSalaries([])
+      return
+    }
+
+    // Filter by month if set (month format YYYY-MM)
+    const filtered = filterMonth
+      ? collections.filter((c) =>
+          c.DateTime.startsWith(filterMonth) // e.g. "2023-04"
+        )
+      : collections
+
+    // Group by supplier + month
+    const map = new Map<string, SupplierSalary>()
+
+    filtered.forEach(({ S_RegisterID, S_FullName, Current_Rate, TotalWeight, DateTime }) => {
+      // Extract month like "April 2023"
+      const dateObj = new Date(DateTime)
+      const monthStr = dateObj.toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      })
+
+      const key = `${S_RegisterID}-${monthStr}`
+
+      if (!map.has(key)) {
+        map.set(key, {
+          supplierId: S_RegisterID,
+          supplierName: S_FullName,
+          totalWeight: 0,
+          averageRate: 0,
+          grossAmount: 0,
+          month: monthStr,
+        })
+      }
+      const existing = map.get(key)!
+      // Sum weight and accumulate weighted rates for average calculation
+      const newTotalWeight = existing.totalWeight + TotalWeight
+      const newGrossAmount = existing.grossAmount + Current_Rate * TotalWeight
+      const newAverageRate = newTotalWeight === 0 ? 0 : newGrossAmount / newTotalWeight
+
+      map.set(key, {
+        supplierId: S_RegisterID,
+        supplierName: S_FullName,
+        totalWeight: newTotalWeight,
+        grossAmount: newGrossAmount,
+        averageRate: newAverageRate,
+        month: monthStr,
+      })
+    })
+
+    setGroupedSalaries(Array.from(map.values()))
+  }, [collections, filterMonth])
+
+  // Filter salaries by search on supplier name
+  const filteredSalaries = groupedSalaries.filter((s) =>
+    s.supplierName.toLowerCase().includes(search.toLowerCase())
+  )
+
+  // Example fixed deduction values per supplier — you can replace with real API calls later
+  const transportFee = 2000
+  const advance = 10000
+  const loanDeduction = 5000
+  const teaPackets = 1400
+  const fertilizer = 2500
+  const otherDeductions = 0
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-green-800">Salary Calculations</h2>
-          <p className="text-gray-500">Manage supplier salary calculations and payments</p>
+          <h2 className="text-3xl font-bold tracking-tight text-green-800">
+            Salary Calculations
+          </h2>
+          <p className="text-gray-500">
+            Manage supplier salary calculations and payments
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button>
@@ -112,34 +164,22 @@ export default function CalculationsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Gross Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Rs. 224,000</div>
-            <p className="text-xs text-gray-500">For April 2023</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Deductions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Rs. 109,700</div>
-            <p className="text-xs text-gray-500">All deductions combined</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Net Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Rs. 114,300</div>
-            <p className="text-xs text-gray-500">To be paid to suppliers</p>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <Input
+          type="search"
+          placeholder="Search supplier..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+
+        <Input
+          type="month"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+          className="max-w-xs"
+          title="Filter by month"
+        />
       </div>
 
       <Card>
@@ -148,108 +188,66 @@ export default function CalculationsPage() {
           <CardDescription>View and manage supplier salary calculations</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="relative w-full sm:w-96">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input type="search" placeholder="Search calculations..." className="w-full pl-8" />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                </Button>
-                <Button variant="outline" size="sm">
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Advanced
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </div>
-            </div>
+          {loading ? (
+            <p>Loading collections...</p>
+          ) : filteredSalaries.length === 0 ? (
+            <p>No salary calculations found.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Supplier ID</TableHead>
+                  <TableHead>Supplier Name</TableHead>
+                  <TableHead>Month</TableHead>
+                  <TableHead>Weight (kg)</TableHead>
+                  <TableHead>Price/Kg (Rs.)</TableHead>
+                  <TableHead>Gross Amount (Rs.)</TableHead>
+                  <TableHead>Deductions (Rs.)</TableHead>
+                  <TableHead>Net Amount (Rs.)</TableHead>
+                  {/* <TableHead className="text-right">Actions</TableHead> */}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSalaries.map((s) => {
+                  const totalDeductions =
+                    transportFee +
+                    advance +
+                    loanDeduction +
+                    teaPackets +
+                    fertilizer +
+                    otherDeductions
+                  const netAmount = Math.max(0, s.grossAmount - totalDeductions)
 
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Supplier</TableHead>
-                    <TableHead>Weight (kg)</TableHead>
-                    <TableHead>Gross (Rs.)</TableHead>
-                    <TableHead>Deductions (Rs.)</TableHead>
-                    <TableHead>Net (Rs.)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {salaryCalculations.map((calc) => {
-                    const totalDeductions =
-                      calc.transportFee +
-                      calc.advance +
-                      calc.loanDeduction +
-                      calc.teaPackets +
-                      calc.fertilizer +
-                      calc.otherDeductions
-
-                    return (
-                      <TableRow key={calc.id}>
-                        <TableCell className="font-medium">{calc.id}</TableCell>
-                        <TableCell>{calc.supplier}</TableCell>
-                        <TableCell>{calc.totalWeight}</TableCell>
-                        <TableCell>{calc.grossAmount.toLocaleString()}</TableCell>
-                        <TableCell>{totalDeductions.toLocaleString()}</TableCell>
-                        <TableCell>{calc.netAmount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              calc.status === "Paid"
-                                ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                : "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                            }
-                          >
-                            {calc.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <Printer className="h-4 w-4 text-blue-600" />
-                              <span className="sr-only">Print paysheet</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/calculations/${calc.id}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <div className="text-sm text-gray-500">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of{" "}
-                <span className="font-medium">128</span> calculations
-              </div>
-              <div className="space-x-2">
-                <Button variant="outline" size="sm" disabled>
-                  Previous
-                </Button>
-                <Button variant="outline" size="sm">
-                  Next
-                </Button>
-              </div>
-            </div>
-          </div>
+                  return (
+                    <TableRow key={s.supplierId + s.month}>
+                      <TableCell>{s.supplierId}</TableCell>
+                      <TableCell>{s.supplierName}</TableCell>
+                      <TableCell>{s.month}</TableCell>
+                      <TableCell>{s.totalWeight.toFixed(2)}</TableCell>
+                      <TableCell>{s.averageRate.toFixed(2)}</TableCell>
+                      <TableCell>{s.grossAmount.toLocaleString()}</TableCell>
+                      <TableCell>{totalDeductions.toLocaleString()}</TableCell>
+                      <TableCell>{netAmount.toLocaleString()}</TableCell>
+                      {/* <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Printer className="h-4 w-4 text-blue-600" />
+                            <span className="sr-only">Print paysheet</span>
+                          </Button>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/dashboard/calculations/${s.supplierId}`}>
+                              <FileText className="h-4 w-4" />
+                              <span className="sr-only">View details</span>
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell> */}
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

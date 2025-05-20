@@ -1,86 +1,230 @@
+"use client"
+
 import Link from "next/link"
-import { Download, FileText, Filter, Plus, Search, SlidersHorizontal } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import {
+  Download,
+  FileText,
+  Filter,
+  Plus,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 
+function Modal({
+  isOpen,
+  onClose,
+  children,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div
+        className="bg-white rounded-md shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto relative p-6"
+        role="dialog"
+        aria-modal="true"
+      >
+        <button
+          className="absolute top-2 right-3 text-gray-500 hover:text-gray-700"
+          onClick={onClose}
+          aria-label="Close modal"
+        >
+          &#x2715;
+        </button>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+interface Supplier {
+  S_RegisterID: string
+  S_FullName: string
+  S_Address: string
+  S_ContactNo: string
+  AccountNumber: string
+  BankName: string
+  Branch: string
+  Email: string
+  Username: string
+}
+
 export default function SuppliersPage() {
-  // Mock data for suppliers
-  const suppliers = [
-    {
-      id: "SUP001",
-      name: "Kamal Perera",
-      address: "123 Tea Garden Rd, Nuwara Eliya",
-      contact: "+94 77 123 4567",
-      account: "1234567890",
-      bank: "Bank of Ceylon",
-      branch: "Nuwara Eliya",
-      email: "kamal@example.com",
-      status: "active",
-      created: "2022-05-15",
-    },
-    {
-      id: "SUP002",
-      name: "Nimal Silva",
-      address: "456 Hill View, Hatton",
-      contact: "+94 76 234 5678",
-      account: "2345678901",
-      bank: "People's Bank",
-      branch: "Hatton",
-      email: "nimal@example.com",
-      status: "active",
-      created: "2022-06-20",
-    },
-    {
-      id: "SUP003",
-      name: "Sunil Fernando",
-      address: "789 Valley Road, Kandy",
-      contact: "+94 75 345 6789",
-      account: "3456789012",
-      bank: "Commercial Bank",
-      branch: "Kandy",
-      email: "sunil@example.com",
-      status: "inactive",
-      created: "2022-07-10",
-    },
-    {
-      id: "SUP004",
-      name: "Amal Jayawardena",
-      address: "234 Mountain View, Badulla",
-      contact: "+94 71 456 7890",
-      account: "4567890123",
-      bank: "Sampath Bank",
-      branch: "Badulla",
-      email: "amal@example.com",
-      status: "active",
-      created: "2022-08-05",
-    },
-    {
-      id: "SUP005",
-      name: "Saman Kumara",
-      address: "567 Green Hills, Ella",
-      contact: "+94 70 567 8901",
-      account: "5678901234",
-      bank: "Nations Trust Bank",
-      branch: "Ella",
-      email: "saman@example.com",
-      status: "active",
-      created: "2022-09-15",
-    },
-  ]
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    S_RegisterID: "",
+    S_FullName: "",
+    S_Address: "",
+    S_ContactNo: "",
+    AccountNumber: "",
+    BankName: "",
+    Branch: "",
+    Email: "",
+    Username: "",
+    password: "",
+  })
+  const [formLoading, setFormLoading] = useState(false)
+  const [formError, setFormError] = useState("")
+
+  async function fetchSuppliers() {
+    setLoading(true)
+    try {
+      const res = await fetch(
+        "https://backend-production-f1ac.up.railway.app/api/supplier/all"
+      )
+      if (!res.ok) throw new Error("Failed to fetch suppliers")
+      const data: Supplier[] = await res.json()
+      setSuppliers(data)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchSuppliers()
+  }, [])
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  function validateForm() {
+    return (
+      formData.S_RegisterID.trim() &&
+      formData.S_FullName.trim() &&
+      formData.S_Address.trim() &&
+      formData.S_ContactNo.trim() &&
+      formData.AccountNumber.trim() &&
+      formData.BankName.trim() &&
+      formData.Branch.trim() &&
+      formData.Email.trim() &&
+      formData.Username.trim() &&
+      formData.password.trim()
+    )
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setFormError("")
+
+    if (!validateForm()) {
+      setFormError("Please fill in all required fields.")
+      return
+    }
+
+    setFormLoading(true)
+
+    try {
+      const res = await fetch(
+        "https://backend-production-f1ac.up.railway.app/api/supplier/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      )
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || "Failed to add supplier")
+      }
+      await fetchSuppliers()
+      setIsModalOpen(false)
+      setFormData({
+        S_RegisterID: "",
+        S_FullName: "",
+        S_Address: "",
+        S_ContactNo: "",
+        AccountNumber: "",
+        BankName: "",
+        Branch: "",
+        Email: "",
+        Username: "",
+        password: "",
+      })
+    } catch (error: any) {
+      setFormError(error.message || "Something went wrong")
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  // DELETE supplier handler
+  async function deleteSupplier(id: string) {
+  if (!confirm("Are you sure you want to delete this supplier?")) return;
+
+  try {
+    setLoading(true);
+    const res = await fetch(
+      `https://backend-production-f1ac.up.railway.app/api/supplier/delete/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!res.ok) {
+      const errorData = await res.json();
+      if (errorData.error && errorData.error.includes("REFERENCE constraint")) {
+        alert(
+          "Cannot delete supplier because related collections or data exist. Please remove related data first."
+        );
+      } else {
+        throw new Error(errorData.message || "Failed to delete supplier");
+      }
+      return;
+    }
+    await fetchSuppliers();
+  } catch (error: any) {
+    alert(error.message || "Error deleting supplier");
+  } finally {
+    setLoading(false);
+  }
+}
+
+
+  const totalSuppliers = suppliers.length
+  const activeSuppliers = suppliers.length
+  const inactiveSuppliers = 0
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-green-800">Suppliers</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-green-800">
+            Suppliers
+          </h2>
           <p className="text-gray-500">Manage supplier information and details</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button>
+          <Button onClick={() => setIsModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Supplier
           </Button>
@@ -93,7 +237,7 @@ export default function SuppliersPage() {
             <CardTitle className="text-sm font-medium">Total Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">128</div>
+            <div className="text-2xl font-bold">{loading ? "..." : totalSuppliers}</div>
           </CardContent>
         </Card>
         <Card>
@@ -101,7 +245,7 @@ export default function SuppliersPage() {
             <CardTitle className="text-sm font-medium">Active Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">112</div>
+            <div className="text-2xl font-bold">{loading ? "..." : activeSuppliers}</div>
           </CardContent>
         </Card>
         <Card>
@@ -109,7 +253,7 @@ export default function SuppliersPage() {
             <CardTitle className="text-sm font-medium">Inactive Suppliers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">16</div>
+            <div className="text-2xl font-bold">{loading ? "..." : inactiveSuppliers}</div>
           </CardContent>
         </Card>
       </div>
@@ -124,83 +268,133 @@ export default function SuppliersPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <div className="relative w-full sm:w-96">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input type="search" placeholder="Search suppliers..." className="w-full pl-8" />
+                <Input
+                  type="search"
+                  placeholder="Search suppliers..."
+                  className="w-full pl-8"
+                  disabled
+                />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Advanced
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
               </div>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="hidden md:table-cell">Contact</TableHead>
-                    <TableHead className="hidden md:table-cell">Bank Account</TableHead>
+                    <TableHead className="hidden lg:table-cell">Account Number</TableHead>
+                    <TableHead className="hidden lg:table-cell">Bank Name</TableHead>
+                    <TableHead className="hidden lg:table-cell">Branch</TableHead>
+                    <TableHead className="hidden lg:table-cell">Username</TableHead>
                     <TableHead className="hidden lg:table-cell">Email</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {suppliers.map((supplier) => (
-                    <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">{supplier.id}</TableCell>
-                      <TableCell>{supplier.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{supplier.contact}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {supplier.account} ({supplier.bank})
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">{supplier.email}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={supplier.status === "active" ? "default" : "secondary"}
-                          className={
-                            supplier.status === "active"
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                          }
-                        >
-                          {supplier.status === "active" ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link href={`/dashboard/suppliers/${supplier.id}`}>
-                            <FileText className="h-4 w-4" />
-                            <span className="sr-only">View details</span>
-                          </Link>
-                        </Button>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center">
+                        Loading suppliers...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : suppliers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center">
+                        No suppliers found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    suppliers.map((supplier) => (
+                      <TableRow key={supplier.S_RegisterID}>
+                        <TableCell className="font-medium">
+                          {supplier.S_RegisterID}
+                        </TableCell>
+                        <TableCell>{supplier.S_FullName}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {supplier.S_ContactNo}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.AccountNumber}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.BankName}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.Branch}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.Username}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {supplier.Email}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" asChild>
+                              <Link href={`/dashboard/suppliers/${supplier.S_RegisterID}`}>
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">View details</span>
+                              </Link>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteSupplier(supplier.S_RegisterID)}
+                              aria-label={`Delete supplier ${supplier.S_FullName}`}
+                              title="Delete supplier"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-red-600 hover:text-red-800"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
 
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="text-sm text-gray-500">
-                Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of{" "}
-                <span className="font-medium">128</span> suppliers
+                Showing <span className="font-medium">1</span> to{" "}
+                <span className="font-medium">{loading ? "..." : suppliers.length}</span> of{" "}
+                <span className="font-medium">{loading ? "..." : suppliers.length}</span> suppliers
               </div>
               <div className="space-x-2">
                 <Button variant="outline" size="sm" disabled>
                   Previous
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   Next
                 </Button>
               </div>
@@ -208,6 +402,131 @@ export default function SuppliersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal for Add Supplier */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <h3 className="text-xl font-semibold mb-4">Add New Supplier</h3>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1 font-medium">Supplier Register ID*</label>
+            <Input
+              name="S_RegisterID"
+              value={formData.S_RegisterID}
+              onChange={onInputChange}
+              required
+              placeholder="e.g. SUP12345"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Full Name*</label>
+            <Input
+              name="S_FullName"
+              value={formData.S_FullName}
+              onChange={onInputChange}
+              required
+              placeholder="Supplier full name"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Address*</label>
+            <Input
+              name="S_Address"
+              value={formData.S_Address}
+              onChange={onInputChange}
+              required
+              placeholder="Supplier address"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Contact Number*</label>
+            <Input
+              name="S_ContactNo"
+              value={formData.S_ContactNo}
+              onChange={onInputChange}
+              required
+              placeholder="Contact number"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Account Number*</label>
+            <Input
+              name="AccountNumber"
+              value={formData.AccountNumber}
+              onChange={onInputChange}
+              required
+              placeholder="Bank account number"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Bank Name*</label>
+            <Input
+              name="BankName"
+              value={formData.BankName}
+              onChange={onInputChange}
+              required
+              placeholder="Bank name"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Branch*</label>
+            <Input
+              name="Branch"
+              value={formData.Branch}
+              onChange={onInputChange}
+              required
+              placeholder="Bank branch"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Email*</label>
+            <Input
+              name="Email"
+              type="email"
+              value={formData.Email}
+              onChange={onInputChange}
+              required
+              placeholder="Email address"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Username*</label>
+            <Input
+              name="Username"
+              value={formData.Username}
+              onChange={onInputChange}
+              required
+              placeholder="Username for login"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Password*</label>
+            <Input
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={onInputChange}
+              required
+              placeholder="Password"
+            />
+          </div>
+
+          {formError && <p className="text-red-600">{formError}</p>}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={formLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={formLoading}>
+              {formLoading ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
