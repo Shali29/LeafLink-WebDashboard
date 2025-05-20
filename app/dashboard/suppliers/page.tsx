@@ -265,31 +265,7 @@ export default function SuppliersPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="relative w-full sm:w-96">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search suppliers..."
-                  className="w-full pl-8"
-                  disabled
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Advanced
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </div>
-            </div>
+            
 
             <div className="rounded-md border overflow-x-auto">
               <Table>
@@ -346,12 +322,7 @@ export default function SuppliersPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/suppliers/${supplier.S_RegisterID}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
+
 
                             <Button
                               variant="ghost"
