@@ -69,17 +69,14 @@ interface Driver {
   VehicalNumber: string
   Route: string
   Serial_Code: string
-  // OTP ignored as per your note
 }
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Modal open state
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Form state for adding driver
   const [formData, setFormData] = useState({
     D_RegisterID: "",
     D_FullName: "",
@@ -90,10 +87,26 @@ export default function DriversPage() {
     Serial_Code: "",
   })
 
-  const [formLoading, setFormLoading] = useState(false)
-  const [formError, setFormError] = useState("")
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
-  // Fetch drivers from API
+  const [formLoading, setFormLoading] = useState(false)
+
+  // Generate 4-digit registration number string
+  const generateRegisterID = () => {
+    const randomNumber = Math.floor(1000 + Math.random() * 9000) // 1000 to 9999
+    return randomNumber.toString()
+  }
+
+  // Generate random serial code (6 chars alphanumeric)
+  const generateSerialCode = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    let code = ""
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return code
+  }
+
   async function fetchDrivers() {
     setLoading(true)
     try {
@@ -114,36 +127,108 @@ export default function DriversPage() {
     fetchDrivers()
   }, [])
 
-  // Input change handler
+  useEffect(() => {
+    if (isModalOpen) {
+      setFormData({
+        D_RegisterID: generateRegisterID(),
+        D_FullName: "",
+        D_ContactNumber: "",
+        Email: "",
+        VehicalNumber: "",
+        Route: "",
+        Serial_Code: generateSerialCode(),
+      })
+      setFormErrors({})
+    }
+  }, [isModalOpen])
+
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    // Prevent manual edit of register ID and serial code
+    if (name === "D_RegisterID" || name === "Serial_Code") return
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFormErrors((prev) => ({ ...prev, [name]: "" }))
   }
 
-  // Basic form validation
   function validateForm() {
-    return (
-      formData.D_RegisterID.trim() &&
-      formData.D_FullName.trim() &&
-      formData.D_ContactNumber.trim() &&
-      formData.Email.trim() &&
-      formData.VehicalNumber.trim() &&
-      formData.Route.trim() &&
-      formData.Serial_Code.trim()
+    const errors: Record<string, string> = {}
+    const {
+      D_RegisterID,
+      D_FullName,
+      D_ContactNumber,
+      Email,
+      VehicalNumber,
+      Route,
+      Serial_Code,
+    } = formData
+
+    if (!D_FullName.trim()) errors.D_FullName = "Full Name is required."
+    if (!D_ContactNumber.trim()) errors.D_ContactNumber = "Contact Number is required."
+    if (!Email.trim()) errors.Email = "Email is required."
+    if (!VehicalNumber.trim()) errors.VehicalNumber = "Vehicle Number is required."
+    if (!Route.trim()) errors.Route = "Route is required."
+    if (!Serial_Code.trim()) errors.Serial_Code = "Serial Code is required."
+
+    const emailRegex = /^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/
+    if (Email && !emailRegex.test(Email)) errors.Email = "Invalid email format."
+
+    const contactRegex = /^0\d{9}$/
+    if (D_ContactNumber && !contactRegex.test(D_ContactNumber))
+      errors.D_ContactNumber = "Contact Number must start with 0 and be exactly 10 digits."
+
+    // Register ID exactly 4 digits numeric string
+    if (D_RegisterID && !/^\d{4}$/.test(D_RegisterID))
+      errors.D_RegisterID = "Register ID must be exactly 4 digits."
+
+    // Check duplicates with null checks:
+    if (
+      Email &&
+      drivers.some((d) => d.Email && d.Email.toLowerCase() === Email.toLowerCase())
     )
+      errors.Email = "Email already exists."
+
+    if (
+      D_RegisterID &&
+      drivers.some(
+        (d) => d.D_RegisterID && d.D_RegisterID === D_RegisterID
+      )
+    )
+      errors.D_RegisterID = "Register ID already exists."
+
+    if (
+      VehicalNumber &&
+      drivers.some(
+        (d) =>
+          d.VehicalNumber &&
+          d.VehicalNumber.toLowerCase() === VehicalNumber.toLowerCase()
+      )
+    )
+      errors.VehicalNumber = "Vehicle Number already exists."
+
+    if (
+      Route &&
+      drivers.some((d) => d.Route && d.Route.toLowerCase() === Route.toLowerCase())
+    )
+      errors.Route = "Route already exists."
+
+    if (
+      Serial_Code &&
+      drivers.some(
+        (d) => d.Serial_Code && d.Serial_Code.toUpperCase() === Serial_Code.toUpperCase()
+      )
+    )
+      errors.Serial_Code = "Serial Code already exists."
+
+    setFormErrors(errors)
+
+    return Object.keys(errors).length === 0
   }
 
-  // Submit new driver
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setFormError("")
-
-    if (!validateForm()) {
-      setFormError("Please fill in all required fields.")
-      return
-    }
+    if (!validateForm()) return
 
     setFormLoading(true)
-
     try {
       const res = await fetch(
         "https://backend-production-f1ac.up.railway.app/api/driver/create",
@@ -156,23 +241,14 @@ export default function DriversPage() {
         }
       )
       if (!res.ok) {
-        const errorData = await res.json()
+        const errorData = await res.json().catch(() => ({}))
         throw new Error(errorData.message || "Failed to add driver")
       }
       await fetchDrivers()
       setIsModalOpen(false)
-      setFormData({
-        D_RegisterID: "",
-        D_FullName: "",
-        D_ContactNumber: "",
-        Email: "",
-        VehicalNumber: "",
-        Route: "",
-        Serial_Code: "",
-      })
+      setFormLoading(false)
     } catch (error: any) {
-      setFormError(error.message || "Something went wrong")
-    } finally {
+      setFormErrors({ general: error.message || "Something went wrong" })
       setFormLoading(false)
     }
   }
@@ -185,9 +261,7 @@ export default function DriversPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-green-800">
-            Drivers
-          </h2>
+          <h2 className="text-3xl font-bold tracking-tight text-green-800">Drivers</h2>
           <p className="text-gray-500">Manage driver information and routes</p>
         </div>
         <div className="flex items-center gap-2">
@@ -352,9 +426,12 @@ export default function DriversPage() {
               name="D_RegisterID"
               value={formData.D_RegisterID}
               onChange={onInputChange}
-              required
-              placeholder="e.g. 110"
+              placeholder="Auto-generated"
+              disabled
             />
+            {formErrors.D_RegisterID && (
+              <p className="text-red-600 mt-1">{formErrors.D_RegisterID}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Full Name*</label>
@@ -362,9 +439,12 @@ export default function DriversPage() {
               name="D_FullName"
               value={formData.D_FullName}
               onChange={onInputChange}
-              required
               placeholder="Full name"
+              required
             />
+            {formErrors.D_FullName && (
+              <p className="text-red-600 mt-1">{formErrors.D_FullName}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Contact Number*</label>
@@ -372,9 +452,12 @@ export default function DriversPage() {
               name="D_ContactNumber"
               value={formData.D_ContactNumber}
               onChange={onInputChange}
-              required
               placeholder="Contact number"
+              required
             />
+            {formErrors.D_ContactNumber && (
+              <p className="text-red-600 mt-1">{formErrors.D_ContactNumber}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Email*</label>
@@ -383,9 +466,12 @@ export default function DriversPage() {
               type="email"
               value={formData.Email}
               onChange={onInputChange}
-              required
               placeholder="Email address"
+              required
             />
+            {formErrors.Email && (
+              <p className="text-red-600 mt-1">{formErrors.Email}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Vehicle Number*</label>
@@ -393,9 +479,12 @@ export default function DriversPage() {
               name="VehicalNumber"
               value={formData.VehicalNumber}
               onChange={onInputChange}
-              required
               placeholder="Vehicle number"
+              required
             />
+            {formErrors.VehicalNumber && (
+              <p className="text-red-600 mt-1">{formErrors.VehicalNumber}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Route*</label>
@@ -403,9 +492,12 @@ export default function DriversPage() {
               name="Route"
               value={formData.Route}
               onChange={onInputChange}
-              required
               placeholder="Route"
+              required
             />
+            {formErrors.Route && (
+              <p className="text-red-600 mt-1">{formErrors.Route}</p>
+            )}
           </div>
           <div>
             <label className="block mb-1 font-medium">Serial Code*</label>
@@ -413,12 +505,17 @@ export default function DriversPage() {
               name="Serial_Code"
               value={formData.Serial_Code}
               onChange={onInputChange}
-              required
               placeholder="Serial code"
+              disabled
             />
+            {formErrors.Serial_Code && (
+              <p className="text-red-600 mt-1">{formErrors.Serial_Code}</p>
+            )}
           </div>
 
-          {formError && <p className="text-red-600">{formError}</p>}
+          {formErrors.general && (
+            <p className="text-red-600 font-semibold">{formErrors.general}</p>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

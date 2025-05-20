@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 
 interface TeaCollectionStat {
-  date: string // e.g. "2025-05-10T00:00:00.000Z"
+  date: string
   totalWeight: number
 }
 
@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [collections, setCollections] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [teaStats, setTeaStats] = useState<TeaCollectionStat[]>([])
+  const [loans, setLoans] = useState<any[]>([])
+  const [advances, setAdvances] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -45,12 +47,16 @@ export default function DashboardPage() {
           collRes,
           prodRes,
           teaStatRes,
+          loanRes,
+          advanceRes,
         ] = await Promise.all([
           fetch("https://backend-production-f1ac.up.railway.app/api/supplier/all"),
           fetch("https://backend-production-f1ac.up.railway.app/api/driver/AllDrivers"),
           fetch("https://backend-production-f1ac.up.railway.app/api/supplierCollection/all"),
           fetch("https://backend-production-f1ac.up.railway.app/api/product/all"),
           fetch("https://backend-production-f1ac.up.railway.app/api/supplierCollection/statistics"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/supplierLoan/all"),
+          fetch("https://backend-production-f1ac.up.railway.app/api/supplierAdvance/all"),
         ])
 
         if (
@@ -58,7 +64,9 @@ export default function DashboardPage() {
           !driverRes.ok ||
           !collRes.ok ||
           !prodRes.ok ||
-          !teaStatRes.ok
+          !teaStatRes.ok ||
+          !loanRes.ok ||
+          !advanceRes.ok
         ) {
           throw new Error("Failed to fetch some data")
         }
@@ -68,9 +76,11 @@ export default function DashboardPage() {
         setCollections(await collRes.json())
         setProducts(await prodRes.json())
 
-        // Extract dailyCollections array from response object
         const teaStatsData = await teaStatRes.json()
         setTeaStats(teaStatsData.dailyCollections || [])
+
+        setLoans(await loanRes.json())
+        setAdvances(await advanceRes.json())
       } catch (error) {
         console.error("Error fetching dashboard data:", error)
       } finally {
@@ -81,29 +91,39 @@ export default function DashboardPage() {
     fetchAllData()
   }, [])
 
-  // Calculate total tea collection kg (from collections)
+  // Total tea collected (kg)
   const totalTeaCollectionKg = collections.reduce(
     (sum, item) => sum + (item.BalanceWeight_kg || 0),
     0
   )
 
-  // Calculate fertilizer collection value from products excluding tea packets
+  // Fertilizer collection value (exclude tea packets)
   const fertilizerProducts = products.filter((p: any) => !p.ProductID.startsWith("T"))
   const fertilizerCollectionValue = fertilizerProducts.reduce(
     (sum, p) => sum + (p.Rate_per_Bag || 0) * (p.Stock_bag || 0),
     0
   )
 
-  // Suppliers count
+  // Low stock threshold example: 20 bags
+  const lowStockProducts = products.filter(
+    (p: any) => (p.Stock_bag ?? 0) < 20
+  )
+
+  // Pending loans count - case-sensitive check on capital 'Status'
+const pendingLoansCount = loans.filter((loan: any) => loan.Status === "Pending").length
+
+// Pending advances count - same here
+const pendingAdvancesCount = advances.filter((adv: any) => adv.Status === "Pending").length
+
+
+  // Other stats
   const totalSuppliers = suppliers.length
-  // Drivers count (assuming all active)
   const activeDriversCount = drivers.length
 
-  // Prepare Tea Collection Overview chart data
   const sortedTeaStats = teaStats
     .slice()
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(-7) // last 7 days
+    .slice(-7)
 
   const dayLabels = sortedTeaStats.map((stat) =>
     new Date(stat.date).toLocaleDateString("en-US", { weekday: "short" })
@@ -191,7 +211,7 @@ export default function DashboardPage() {
                 <p className="text-center w-full">Loading chart...</p>
               ) : (
                 values.map((value, i) => {
-                  const barHeight = (value / maxVal) * 190 // max bar height px
+                  const barHeight = (value / maxVal) * 190
                   return (
                     <div key={i} className="relative flex flex-col items-center">
                       <div
@@ -216,48 +236,73 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start gap-4 rounded-lg border p-3">
-                <AlertTriangle className="mt-1 h-5 w-5 text-amber-500" />
-                <div>
-                  <p className="text-sm font-medium">Low Fertilizer Stock</p>
-                  <p className="text-xs text-gray-500">
-                    NPK Fertilizer is running low (15 units left)
-                  </p>
-                  <div className="mt-2">
-                    <Button variant="outline" size="sm">
-                      Order More
-                    </Button>
+              {/* Low Stock Notification */}
+              {lowStockProducts.length > 0 && (
+                <div className="flex items-start gap-4 rounded-lg border p-3">
+                  <AlertTriangle className="mt-1 h-5 w-5 text-amber-500" />
+                  <div>
+                    <p className="text-sm font-medium">Low Fertilizer Stock</p>
+                    <p className="text-xs text-gray-500">
+                      {lowStockProducts.length} product(s) running low (below 20 bags)
+                    </p>
+                    <ul className="list-disc list-inside text-xs mt-2 max-h-24 overflow-y-auto">
+                      {lowStockProducts.map((p) => (
+                        <li key={p.ProductID}>
+                          {p.ProductName}: {p.Stock_bag} bags left
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm">
+                        Order More
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-lg border p-3">
-                <AlertTriangle className="mt-1 h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-medium">Loan Payment Due</p>
-                  <p className="text-xs text-gray-500">
-                    5 suppliers have loan payments due this week
-                  </p>
-                  <div className="mt-2">
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
+              )}
+
+              {/* Pending Loans Notification */}
+              {pendingLoansCount > 0 && (
+                <div className="flex items-start gap-4 rounded-lg border p-3">
+                  <AlertTriangle className="mt-1 h-5 w-5 text-red-500" />
+                  <div>
+                    <p className="text-sm font-medium">Loan Payment Due</p>
+                    <p className="text-xs text-gray-500">
+                      {pendingLoansCount} loan(s) have payments pending
+                    </p>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-lg border p-3">
-                <AlertTriangle className="mt-1 h-5 w-5 text-green-500" />
-                <div>
-                  <p className="text-sm font-medium">Advance Payment Reminder</p>
-                  <p className="text-xs text-gray-500">
-                    Supplier advances due on 25th (3 days remaining)
-                  </p>
-                  <div className="mt-2">
-                    <Button variant="outline" size="sm">
-                      Prepare Advances
-                    </Button>
+              )}
+
+              {/* Pending Advances Notification */}
+              {pendingAdvancesCount > 0 && (
+                <div className="flex items-start gap-4 rounded-lg border p-3">
+                  <AlertTriangle className="mt-1 h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">Advance Payment Reminder</p>
+                    <p className="text-xs text-gray-500">
+                      {pendingAdvancesCount} advance(s) pending payment
+                    </p>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm">
+                        Prepare Advances
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* If no alerts */}
+              {lowStockProducts.length === 0 &&
+                pendingLoansCount === 0 &&
+                pendingAdvancesCount === 0 && (
+                  <p className="text-center text-gray-500">No alerts or notifications</p>
+                )}
             </div>
           </CardContent>
         </Card>

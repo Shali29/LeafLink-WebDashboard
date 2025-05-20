@@ -239,7 +239,7 @@ export default function TrackingPage() {
                       <th className="py-3 px-4 text-left text-sm font-medium">Driver</th>
                       <th className="py-3 px-4 text-left text-sm font-medium">Vehicle</th>
                       <th className="py-3 px-4 text-left text-sm font-medium hidden md:table-cell">Route</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium">Status</th>
+                      {/* <th className="py-3 px-4 text-left text-sm font-medium">Status</th> */}
                       <th className="py-3 px-4 text-left text-sm font-medium hidden lg:table-cell">Last Update</th>
                       <th className="py-3 px-4 text-left text-sm font-medium">Location</th>
                       <th className="py-3 px-4 text-right text-sm font-medium"></th>
@@ -260,7 +260,7 @@ export default function TrackingPage() {
                           <td className="py-3 px-4 text-sm">{driver.name}</td>
                           <td className="py-3 px-4 text-sm">{driver.vehicle}</td>
                           <td className="py-3 px-4 text-sm hidden md:table-cell">{driver.route}</td>
-                          <td className="py-3 px-4 text-sm">
+                          {/* <td className="py-3 px-4 text-sm">
                             <Badge
                               variant="secondary"
                               className={
@@ -273,7 +273,7 @@ export default function TrackingPage() {
                             >
                               {driver.status}
                             </Badge>
-                          </td>
+                          </td> */}
                           <td className="py-3 px-4 text-sm hidden lg:table-cell">
                             <div className="flex items-center">
                               <Clock className="mr-1 h-3 w-3 text-gray-500" />
