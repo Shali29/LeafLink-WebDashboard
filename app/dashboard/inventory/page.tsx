@@ -180,16 +180,7 @@ export default function InventoryPage() {
                     onChange={(e) => setSearchTea(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
+                
               </div>
 
               <div className="rounded-md border overflow-x-auto">
@@ -202,7 +193,7 @@ export default function InventoryPage() {
                       <TableHead>Price (Rs.)</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -228,14 +219,7 @@ export default function InventoryPage() {
                               {item.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/inventory/${item.id}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
-                          </TableCell>
+                          
                         </TableRow>
                       ))
                     )}
