@@ -308,27 +308,11 @@ export default function DriversPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <div className="relative w-full sm:w-96">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="search"
-                  placeholder="Search drivers..."
-                  className="w-full pl-8"
-                  disabled
-                />
+              
+                
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Advanced
-                </Button>
-                <Button variant="outline" size="sm" disabled>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
+                
               </div>
             </div>
 
@@ -342,8 +326,7 @@ export default function DriversPage() {
                     <TableHead className="hidden md:table-cell">Vehicle</TableHead>
                     <TableHead className="hidden lg:table-cell">Route</TableHead>
                     <TableHead className="hidden lg:table-cell">Serial Code</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -368,28 +351,8 @@ export default function DriversPage() {
                         <TableCell className="hidden md:table-cell">{driver.VehicalNumber}</TableCell>
                         <TableCell className="hidden lg:table-cell">{driver.Route}</TableCell>
                         <TableCell className="hidden lg:table-cell">{driver.Serial_Code}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="default"
-                            className="bg-green-100 text-green-800 hover:bg-green-100"
-                          >
-                            Active
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon">
-                              <MapPin className="h-4 w-4 text-blue-600" />
-                              <span className="sr-only">Track location</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/drivers/${driver.D_RegisterID}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
-                          </div>
-                        </TableCell>
+                        
+                       
                       </TableRow>
                     ))
                   )}
