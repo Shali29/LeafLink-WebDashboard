@@ -203,7 +203,7 @@ const pendingAdvancesCount = advances.filter((adv: any) => adv.Status === "Pendi
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Tea Collection Overview</CardTitle>
-            <CardDescription>Daily collection amounts for the past week</CardDescription>
+            <CardDescription>Daily collection amounts for the month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] flex items-end justify-between gap-2">
