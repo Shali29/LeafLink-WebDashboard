@@ -310,85 +310,10 @@ const pendingAdvancesCount = advances.filter((adv: any) => adv.Status === "Pendi
 
       {/* Monthly Targets and Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Monthly Targets</CardTitle>
-            <CardDescription>Progress towards monthly goals</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Tea Collection</div>
-                <div className="text-sm text-gray-500">18,500 / 25,000 kg</div>
-              </div>
-              <Progress value={74} className="h-2" />
-              <div className="text-xs text-gray-500">74% of monthly target</div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Supplier Payments</div>
-                <div className="text-sm text-gray-500">Rs. 3.2M / Rs. 4.5M</div>
-              </div>
-              <Progress value={71} className="h-2" />
-              <div className="text-xs text-gray-500">71% of monthly budget</div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Tea Packet Sales</div>
-                <div className="text-sm text-gray-500">8,200 / 10,000 units</div>
-              </div>
-              <Progress value={82} className="h-2" />
-              <div className="text-xs text-gray-500">82% of monthly target</div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Fertilizer Sales</div>
-                <div className="text-sm text-gray-500">450 / 600 units</div>
-              </div>
-              <Progress value={75} className="h-2" />
-              <div className="text-xs text-gray-500">75% of monthly target</div>
-            </div>
-          </CardContent>
-        </Card>
+        
 
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <Users className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Add Supplier</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <Truck className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Add Driver</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <Package className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Update Inventory</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col items-center justify-center"
-                >
-                  <ArrowUpRight className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Generate Report</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </div>
     </div>
