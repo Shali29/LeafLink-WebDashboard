@@ -839,12 +839,7 @@ export default function FinancesPage() {
                             >
                               <Trash2 className="h-4 w-4 text-red-600 hover:text-red-800" />
                             </Button>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/finances/advances/${adv.AdvanceID}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
+                            
                           </TableCell>
                         </TableRow>
                       ))
@@ -962,12 +957,7 @@ export default function FinancesPage() {
                             >
                               <Trash2 className="h-4 w-4 text-red-600 hover:text-red-800" />
                             </Button>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link href={`/dashboard/finances/loans/${loan.LoanID}`}>
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">View details</span>
-                              </Link>
-                            </Button>
+                            
                           </TableCell>
                         </TableRow>
                       ))
