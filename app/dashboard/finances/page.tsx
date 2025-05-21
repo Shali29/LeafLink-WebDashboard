@@ -755,10 +755,7 @@ export default function FinancesPage() {
                   >
                     Create Advance for All Suppliers
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+                 
                 </div>
               </div>
 
@@ -872,14 +869,7 @@ export default function FinancesPage() {
                     <Plus className="mr-2 h-4 w-4" />
                     New Loan
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+                  
                 </div>
               </div>
 
@@ -1021,14 +1011,7 @@ export default function FinancesPage() {
                   >
                     Create Payment
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Advanced
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+                 
                 </div>
               </div>
 
