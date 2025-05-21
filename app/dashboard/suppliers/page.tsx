@@ -279,7 +279,7 @@ export default function SuppliersPage() {
                     <TableHead className="hidden lg:table-cell">Branch</TableHead>
                     <TableHead className="hidden lg:table-cell">Username</TableHead>
                     <TableHead className="hidden lg:table-cell">Email</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -331,20 +331,7 @@ export default function SuppliersPage() {
                               aria-label={`Delete supplier ${supplier.S_FullName}`}
                               title="Delete supplier"
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 text-red-600 hover:text-red-800"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
+                              
                             </Button>
                           </div>
                         </TableCell>
