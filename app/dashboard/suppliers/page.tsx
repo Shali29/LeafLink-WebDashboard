@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 
+// Reusable modal component
 function Modal({
   isOpen,
   onClose,
@@ -60,6 +61,7 @@ function Modal({
   )
 }
 
+// Type definition for supplier
 interface Supplier {
   S_RegisterID: string
   S_FullName: string
@@ -73,6 +75,7 @@ interface Supplier {
 }
 
 export default function SuppliersPage() {
+  // State for supplier list and loading indicator
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -92,6 +95,7 @@ export default function SuppliersPage() {
   const [formLoading, setFormLoading] = useState(false)
   const [formError, setFormError] = useState("")
 
+  // Fetch supplier data from backend
   async function fetchSuppliers() {
     setLoading(true)
     try {
@@ -108,14 +112,17 @@ export default function SuppliersPage() {
     }
   }
 
+  // Initial fetch on component mount
   useEffect(() => {
     fetchSuppliers()
   }, [])
 
+   // Handle form input changes
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  // Validate form before submission
   function validateForm() {
     return (
       formData.S_RegisterID.trim() &&
@@ -131,6 +138,7 @@ export default function SuppliersPage() {
     )
   }
 
+  // Handle form submit for adding new supplier
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError("")
@@ -231,6 +239,7 @@ export default function SuppliersPage() {
         </div>
       </div>
 
+{/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
@@ -258,6 +267,7 @@ export default function SuppliersPage() {
         </Card>
       </div>
 
+{/* Table Section */}
       <Card>
         <CardHeader>
           <CardTitle>Supplier Management</CardTitle>
@@ -323,7 +333,7 @@ export default function SuppliersPage() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
 
-
+                          {/* Delete Button */}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -342,6 +352,7 @@ export default function SuppliersPage() {
               </Table>
             </div>
 
+           {/* Pagination Info */}
             <div className="flex items-center justify-end space-x-2 py-4">
               <div className="text-sm text-gray-500">
                 Showing <span className="font-medium">1</span> to{" "}
