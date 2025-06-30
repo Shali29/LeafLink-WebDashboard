@@ -63,6 +63,7 @@ function Modal({
   )
 }
 
+// TypeScript interfaces for data models
 interface Advance {
   AdvanceID: number
   S_RegisterID: string
@@ -112,7 +113,7 @@ interface Collection {
 }
 
 export default function FinancesPage() {
-  // Data states
+  // State variables for all data entities
   const [advances, setAdvances] = useState<Advance[]>([])
   const [loans, setLoans] = useState<Loan[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -120,16 +121,17 @@ export default function FinancesPage() {
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Search states
+  // State for search filters
   const [searchAdvances, setSearchAdvances] = useState("")
   const [searchLoans, setSearchLoans] = useState("")
   const [searchPayments, setSearchPayments] = useState("")
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
 
+  // Status options for dropdowns
   const advanceStatusOptions = ["Pending", "Transfered"]
   const statusOptions = ["Pending", "Approved", "Rejected", "Paid"]
 
-  // Advance modal states
+  // Modal states for advances
   const [modalOpenSingleAdvance, setModalOpenSingleAdvance] = useState(false)
   const [modalSupplierAdvance, setModalSupplierAdvance] = useState<Supplier | null>(null)
   const [modalAdvanceAmount, setModalAdvanceAmount] = useState<number>(0)
@@ -167,16 +169,17 @@ export default function FinancesPage() {
   const [modalLoanDueDate, setModalLoanDueDate] = useState<string>(new Date().toISOString().slice(0, 10))
   const [modalLoanStatus, setModalLoanStatus] = useState<string>("Pending")
 
-  // Format number helper
+  // Helper: format numbers as locale strings
   function formatNumber(value: any) {
     return typeof value === "number" ? value.toLocaleString() : "0"
   }
 
-  // Fetch all data on mount
+  // Fetch all relevant data from backend when component mounts
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
+        // Fetch all data in parallel
         const [advRes, loanRes, payRes, supRes, collRes] = await Promise.all([
           fetch("https://backend-production-f1ac.up.railway.app/api/supplierAdvance/all"),
           fetch("https://backend-production-f1ac.up.railway.app/api/supplierLoan/all"),
@@ -185,9 +188,11 @@ export default function FinancesPage() {
           fetch("https://backend-production-f1ac.up.railway.app/api/supplierCollection/all"),
         ])
 
+        // Error handling if any fetch fails
         if (!advRes.ok || !loanRes.ok || !payRes.ok || !supRes.ok || !collRes.ok)
           throw new Error("Failed to fetch some data")
 
+        // Parse JSON and update state
         const advData = await advRes.json()
         const loanData = await loanRes.json()
         const payData = await payRes.json()
@@ -208,7 +213,7 @@ export default function FinancesPage() {
     fetchData()
   }, [])
 
-  // Update status
+  // Function to update status of an advance, loan, or payment
   const updateStatus = async (
     type: "advance" | "loan" | "payment",
     id: number,
@@ -218,6 +223,7 @@ export default function FinancesPage() {
       let url = ""
       let bodyData = {}
 
+      // Determine API endpoint and body based on type
       switch (type) {
         case "advance":
           url = `https://backend-production-f1ac.up.railway.app/api/supplierAdvance/updateStatus/${id}`
@@ -233,18 +239,21 @@ export default function FinancesPage() {
           break
       }
 
+      // Send PUT request to update status
       const res = await fetch(url, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyData),
       })
 
+       // Error handling for failed update
       if (!res.ok) {
         const errorText = await res.text()
         console.error(`Failed to update status, response:`, errorText)
         throw new Error("Failed to update status")
       }
 
+      // Update local state after successful update
       if (type === "advance") {
         setAdvances((prev) =>
           prev.map((a) => (a.AdvanceID === id ? { ...a, Status: newStatus } : a))
@@ -263,7 +272,7 @@ export default function FinancesPage() {
     }
   }
 
-  // Delete handlers
+  // Delete advance by ID with confirmation and error handling
   const deleteAdvance = async (id: number) => {
     if (!confirm("Are you sure you want to delete this advance?")) return
     setLoading(true)
@@ -280,6 +289,7 @@ export default function FinancesPage() {
     }
   }
 
+  // Delete loan by ID with confirmation and error handling
   const deleteLoan = async (id: number) => {
     if (!confirm("Are you sure you want to delete this loan?")) return
     setLoading(true)
@@ -296,6 +306,7 @@ export default function FinancesPage() {
     }
   }
 
+  // Delete payment by ID with confirmation and error handling
   const deletePayment = async (id: number) => {
     if (!confirm("Are you sure you want to delete this payment?")) return
     setLoading(true)
@@ -312,7 +323,7 @@ export default function FinancesPage() {
     }
   }
 
-  // Filters
+  // Filtered lists for search functionality
   const filteredAdvances = advances.filter((a) =>
     a.S_FullName.toLowerCase().includes(searchAdvances.toLowerCase())
   )
@@ -323,7 +334,7 @@ export default function FinancesPage() {
     p.S_FullName.toLowerCase().includes(searchPayments.toLowerCase())
   )
 
-  // Outstanding calculations
+  // Calculate outstanding advance for a supplier
   const getOutstandingAdvanceForSupplier = (supplierId: string): number =>
     advances
       .filter(
@@ -332,6 +343,7 @@ export default function FinancesPage() {
       )
       .reduce((acc, a) => acc + (a.Advance_Amount || 0), 0)
 
+      // Calculate outstanding loan for a supplier
   const getOutstandingLoanForSupplier = (supplierId: string): number =>
     loans
       .filter(
@@ -341,6 +353,7 @@ export default function FinancesPage() {
       )
       .reduce((acc, l) => acc + (l.Loan_Amount || 0), 0)
 
+       // Calculate total tea collection value for a supplier
   const getTeaCollectionAmountForSupplier = (supplierId: string): number =>
     collections
       .filter((c) => c.S_RegisterID === supplierId)
